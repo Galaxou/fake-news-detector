@@ -1,0 +1,402 @@
+\documentclass[a4paper, 12pt, twoside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}		
+\usepackage[francais]{babel}
+\usepackage{lmodern}
+\usepackage{ae,aecompl}
+\usepackage[top=2.5cm, bottom=2cm, 
+			left=3cm, right=2.5cm,
+			headheight=15pt]{geometry}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{array} 
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+
+% ── Style du code ──────────────────────────────────────────
+\definecolor{codegris}{RGB}{245,245,245}
+\definecolor{codevert}{RGB}{0,128,0}
+\definecolor{codebleu}{RGB}{0,0,200}
+\lstset{
+  backgroundcolor=\color{codegris},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codebleu}\bfseries,
+  commentstyle=\color{codevert},
+  frame=single,
+  breaklines=true,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  language=Python,
+}
+
+\input{pagedegarde}
+
+\title{Détection automatique des Fake News}
+\entreprise{Université Paris Nanterre}
+\datedebut{1 Avril 2025}
+\datefin{23 Mai 2025}
+
+\membrea{\textbf{OUATIK} \textbf{Marwane} \textcolor{red}{\textbf{45018118}}}
+\membreb{\textbf{GHANEM} \textbf{Rayan} \textcolor{red}{\textbf{45017436}}}
+\membrec{\textbf{BENDJELLOUL} \textbf{Rayane} \textcolor{red}{\textbf{4501665}}}
+\membred{\textbf{BENELKHAZNADJI} \textbf{Nadir} \textcolor{red}{\textbf{4501665}}}
+
+\begin{document}
+\pagedegarde
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Introduction}
+% ============================================================
+
+Dans un monde où l'information circule à une vitesse sans précédent, la
+désinformation constitue un danger croissant pour les sociétés démocratiques.
+Les \textit{fake news} --- ou fausses informations --- se propagent via les
+réseaux sociaux, les médias en ligne et les messageries instantanées, rendant
+difficile pour le grand public de distinguer le vrai du faux.
+
+Dans ce projet, nous avons conçu un système automatique de détection des
+fake news s'appuyant sur des techniques d'apprentissage automatique
+(\textit{Machine Learning}). Pour ce faire, nous utilisons deux jeux de
+données : \texttt{Fake.csv} et \texttt{True.csv}, contenant respectivement
+des articles faux et des articles authentiques.
+
+Ce rapport décrit les choix techniques effectués, les outils utilisés, les
+difficultés rencontrées et les résultats obtenus.
+
+% ============================================================
+\section{Environnement de travail}
+% ============================================================
+
+Nous avons travaillé en \textbf{Python}, langage incontournable en Data
+Science grâce à sa syntaxe claire et sa richesse en bibliothèques spécialisées.
+
+Concernant les environnements de développement, nous avons utilisé deux outils
+complémentaires :
+
+\begin{itemize}
+  \item \textbf{JupyterLite (WASM)} : environnement principal d'exécution,
+        accessible directement via un navigateur web sans installation locale.
+        Les bibliothèques s'installent via la commande \texttt{!mamba install}.
+  \item \textbf{Visual Studio Code} : utilisé pour l'édition locale du code
+        source, grâce à sa légèreté et ses nombreuses extensions Python.
+\end{itemize}
+
+Pour la rédaction du rapport, nous avons utilisé \textbf{Overleaf}, une
+plateforme en ligne de rédaction \LaTeX{} permettant la collaboration en
+temps réel.
+
+% ============================================================
+\section{Description du projet et objectifs}
+% ============================================================
+
+\subsection{Mise en contexte}
+
+Le projet s'appuie sur deux fichiers CSV issus d'un dataset public largement
+utilisé dans la recherche sur la désinformation. \texttt{Fake.csv} contient
+des articles de presse identifiés comme faux, tandis que \texttt{True.csv}
+contient des articles authentiques. Après fusion et mélange aléatoire, le
+dataset comprend plusieurs dizaines de milliers d'articles étiquetés.
+
+L'idée centrale est d'entraîner un modèle de classification supervisée
+capable, à partir du texte brut d'un article, de prédire s'il s'agit d'une
+fake news ou d'une information authentique.
+
+\subsection{Objectifs}
+
+Les objectifs de notre projet sont :
+
+\begin{itemize}
+  \item \textbf{Traitement du langage naturel (NLP)} : nettoyer et préparer
+        les textes (suppression des stopwords, URLs, caractères spéciaux).
+  \item \textbf{Classification binaire} : distinguer les fausses informations
+        des vraies avec une précision maximale.
+  \item \textbf{Détection mathématique} : identifier et vérifier
+        automatiquement les expressions mathématiques saisies par l'utilisateur.
+  \item \textbf{Interface utilisateur} : permettre à un utilisateur de
+        soumettre un texte et d'obtenir un verdict
+        \texttt{FAKE NEWS} ou \texttt{AUTHENTIC NEWS}.
+  \item \textbf{Sauvegarde du modèle} : exporter le modèle entraîné pour
+        une réutilisation sans ré-entraînement.
+\end{itemize}
+
+% ============================================================
+\section{Bibliothèques, Outils et technologies}
+% ============================================================
+
+\subsection*{Bibliothèques Python utilisées}
+
+\begin{itemize}
+  \item \texttt{\textbf{pandas}} : chargement et manipulation des datasets CSV.
+  \item \texttt{\textbf{numpy}} : opérations numériques de base.
+  \item \texttt{\textbf{scikit-learn}} : vectorisation TF-IDF
+        (\texttt{TfidfVectorizer}), modèle \texttt{LogisticRegression},
+        métriques d'évaluation (\texttt{accuracy\_score},
+        \texttt{classification\_report}, \texttt{confusion\_matrix}).
+  \item \texttt{\textbf{nltk}} : traitement du langage naturel, suppression
+        des stopwords anglais.
+  \item \texttt{\textbf{joblib}} : sérialisation et sauvegarde du modèle
+        et du vectoriseur entraînés.
+  \item \texttt{\textbf{ast / re / operator}} : analyse syntaxique et
+        évaluation sécurisée des expressions mathématiques (sans
+        \texttt{eval()}).
+\end{itemize}
+
+\subsection*{Technologies clés}
+
+\begin{itemize}
+  \item \textbf{TF-IDF} (\textit{Term Frequency--Inverse Document Frequency}) :
+        méthode de vectorisation qui transforme les textes en vecteurs
+        numériques en pondérant l'importance relative de chaque mot.
+  \item \textbf{Régression Logistique} : algorithme de classification binaire
+        supervisée, simple, interprétable et très performant sur des
+        représentations TF-IDF.
+\end{itemize}
+
+% ============================================================
+\section{Travail réalisé}
+% ============================================================
+
+\subsection*{Répartition des tâches}
+
+Nous avons divisé le travail en trois parties afin que chacun puisse
+contribuer pleinement au projet :
+
+\begin{itemize}
+  \item \textbf{Partie 1 --- OUATIK Marwane} : Préparation des données,
+        chargement des CSV, nettoyage des textes (fonction
+        \texttt{clean\_text}), étiquetage et fusion des datasets.
+  \item \textbf{Partie 2 --- GHANEM Rayan} : Vectorisation TF-IDF,
+        entraînement du modèle de régression logistique, évaluation
+        (accuracy, matrice de confusion, rapport de classification),
+        sauvegarde du modèle avec \texttt{joblib}.
+  \item \textbf{Partie 3 --- BENDJELLOUL Rayane et BENELKHAZNADJI Nadir} :
+        Détection et évaluation sécurisée des expressions mathématiques
+        via le module \texttt{ast}, boucle interactive utilisateur.
+\end{itemize}
+
+\subsection*{Fonctionnalités prévues et réalisées}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|p{7cm}|c|p{4cm}|}
+\hline
+\textbf{Fonctionnalité} & \textbf{Réalisée ?} & \textbf{Remarques} \\
+\hline
+Chargement et fusion des datasets & Oui & --- \\
+\hline
+Nettoyage NLP des textes & Oui & --- \\
+\hline
+Vectorisation TF-IDF & Oui & --- \\
+\hline
+Entraînement régression logistique & Oui & Précision $>$ 98\,\% \\
+\hline
+Sauvegarde du modèle (.pkl) & Oui & --- \\
+\hline
+Détection mathématique sécurisée & Oui & Sans \texttt{eval()} \\
+\hline
+Interface utilisateur interactive & Oui & Boucle \texttt{while} \\
+\hline
+Interface web (Flask/Streamlit) & Non & Manque de temps \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Liste des fonctionnalités prévues et leur état de réalisation}
+\label{tab:fonctionnalites}
+\end{table}
+
+Le tableau \ref{tab:fonctionnalites} résume l'ensemble des fonctionnalités.
+L'interface web n'a pas pu être réalisée par manque de temps lors de la
+phase finale du projet.
+
+% ============================================================
+\section{Difficultés rencontrées}
+% ============================================================
+
+\begin{itemize}
+  \item \textbf{Compréhension des données} : Il a fallu analyser le contenu
+        des fichiers CSV et s'assurer que les labels étaient correctement
+        attribués avant tout entraînement.
+
+  \item \textbf{Environnement JupyterLite (WASM)} : L'installation des
+        bibliothèques nécessite \texttt{mamba} et non \texttt{pip}, ce qui
+        est inhabituel. La gestion des chemins de fichiers dans un
+        environnement navigateur a également posé des problèmes.
+
+  \item \textbf{Sécurité de l'évaluateur mathématique} : L'utilisation de
+        \texttt{eval()} étant dangereuse, nous avons dû implémenter un
+        évaluateur basé sur le module \texttt{ast}, qui analyse l'arbre
+        syntaxique abstrait de l'expression.
+
+  \item \textbf{Limites des LLM} : Nous avons utilisé ChatGPT et Mistral
+        comme outils d'assistance. Si utiles pour déboguer, ils ont parfois
+        produit du code qui semblait correct mais ne fonctionnait pas dans
+        notre environnement spécifique.
+\end{itemize}
+
+\newpage
+% ============================================================
+\section{Bilan}
+% ============================================================
+
+\subsection{Conclusion}
+
+Ce projet nous a permis de mettre en pratique les grandes étapes d'un
+pipeline de Machine Learning appliqué au traitement du langage naturel :
+préparation des données, extraction de features, entraînement, évaluation
+et déploiement sous forme d'interface interactive. Le modèle atteint une
+précision supérieure à 98\,\% sur les données de test, ce qui confirme
+l'efficacité de l'approche TF-IDF + régression logistique pour ce type
+de tâche.
+
+\subsection{Perspectives}
+
+Plusieurs améliorations pourraient être apportées à notre système :
+
+\begin{itemize}
+  \item Tester des modèles plus sophistiqués : transformers (BERT, RoBERTa)
+        pour une meilleure compréhension sémantique.
+  \item Analyser également le titre et la source de l'article.
+  \item Créer une interface web avec Flask ou Streamlit.
+  \item Étendre la détection à d'autres langues, notamment le français.
+\end{itemize}
+
+% ============================================================
+\section{Webographie}
+% ============================================================
+\begin{thebibliography}{4}
+  \bibitem[SKL-DOC]{skldoc} \url{https://scikit-learn.org/stable/}
+  \bibitem[NLTK]{nltk} \url{https://www.nltk.org/}
+  \bibitem[DATASET]{dataset} \url{https://www.kaggle.com/clmentbisaillon/fake-and-real-news-dataset}
+  \bibitem[OVERLEAF]{overleaf} \url{https://www.overleaf.com/}
+  \bibitem[GPT]{gpt} \url{https://chat.openai.com/}
+  \bibitem[MISTRAL]{mistral} \url{https://chat.mistral.ai/}
+\end{thebibliography}
+
+\newpage
+
+% ============================================================
+\section{Annexes}
+% ============================================================
+\appendix
+\makeatletter
+\def\@seccntformat#1{Annexe~\csname the#1\endcsname:\quad}
+\makeatother
+
+% ── ANNEXE A ────────────────────────────────────────────────
+\section{Cahier des charges}
+
+\textbf{1. Introduction}\\
+Le projet vise à développer un programme de détection automatique des fake
+news à partir de textes en anglais, en s'appuyant sur le NLP et le Machine
+Learning.
+
+\medskip
+\textbf{2. Objectifs}
+\begin{itemize}
+  \item Développer un pipeline complet de traitement et classification de textes.
+  \item Offrir une interface interactive pour soumettre un article.
+  \item Gérer la vérification des expressions mathématiques.
+  \item Sauvegarder le modèle entraîné pour réutilisation.
+\end{itemize}
+
+\medskip
+\textbf{3. Fonctionnalités}
+\begin{itemize}
+  \item Nettoyage NLP : stopwords, URLs, caractères spéciaux.
+  \item Vectorisation TF-IDF.
+  \item Classification binaire : FAKE / AUTHENTIC.
+  \item Évaluation mathématique sécurisée (sans \texttt{eval()}).
+\end{itemize}
+
+\medskip
+\textbf{4. Planning : du 1 Avril au 23 Mai 2025}
+\begin{itemize}
+  \item Phase 1 : Analyse des besoins (1 semaine).
+  \item Phase 2 : Préparation des données et pipeline NLP (2 semaines).
+  \item Phase 3 : Entraînement et évaluation du modèle (1 semaine).
+  \item Phase 4 : Interface utilisateur et tests finaux (1 semaine).
+\end{itemize}
+
+% ── ANNEXE B ────────────────────────────────────────────────
+\section{Exemple d'exécution du projet}
+
+Pour cet exemple, nous avons testé les entrées suivantes dans la boucle
+interactive :
+
+\begin{lstlisting}[language={}, title={Sortie console}]
+================================
+DETECTION AUTOMATIQUE DES FAKE NEWS GRACE A L'IA
+================================
+
+Entree : 2 + 2 = 4
+Resultat : AUTHENTIC NEWS
+
+Entree : 10 > 5
+Resultat : AUTHENTIC NEWS
+
+Entree : 5 * 7 = 20
+Resultat : FAKE NEWS
+
+Entree : NASA discovered water on Mars
+Resultat : AUTHENTIC NEWS
+
+Entrez une information (ou tapez exit) : exit
+Programme arrete
+\end{lstlisting}
+
+Les trois premiers exemples illustrent la détection mathématique :
+$2+2=4$ est vrai (AUTHENTIC), $10>5$ est vrai (AUTHENTIC), mais
+$5 \times 7 = 20$ est faux (FAKE NEWS). Le dernier exemple illustre
+la classification NLP sur un texte journalistique.
+
+% ── ANNEXE C ────────────────────────────────────────────────
+\section{Manuel utilisateur}
+
+\textbf{Installation des dépendances}
+
+Dans un environnement JupyterLite :
+\begin{lstlisting}[language=bash, numbers=none]
+!mamba install pandas numpy scikit-learn nltk joblib
+\end{lstlisting}
+
+Dans un environnement Python standard :
+\begin{lstlisting}[language=bash, numbers=none]
+pip install pandas numpy scikit-learn nltk joblib
+\end{lstlisting}
+
+\medskip
+\textbf{Fichiers nécessaires}
+\begin{itemize}
+  \item \texttt{Fake.csv} --- dataset des articles faux
+  \item \texttt{True.csv} --- dataset des articles authentiques
+  \item Le notebook ou script Python principal
+\end{itemize}
+
+\medskip
+\textbf{Structure du dossier recommandée}
+\begin{lstlisting}[language=bash, numbers=none]
+projet_fakenews/
+  |-- fake_news_detection.ipynb
+  |-- Fake.csv
+  |-- True.csv
+  |-- fake_news_model.pkl      (genere apres entrainement)
+  |-- tfidf_vectorizer.pkl     (genere apres entrainement)
+\end{lstlisting}
+
+\medskip
+\textbf{Exécution}
+\begin{enumerate}
+  \item Placer \texttt{Fake.csv} et \texttt{True.csv} dans le même dossier
+        que le script.
+  \item Exécuter toutes les cellules dans l'ordre.
+  \item Saisir un texte ou une expression mathématique à l'invite.
+  \item Taper \texttt{exit} pour quitter le programme.
+\end{enumerate}
+
+\end{document}
